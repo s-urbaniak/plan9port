@@ -976,8 +976,8 @@ iconinit(void)
 		tagcols[TEXT] = display->black;
 		tagcols[HTEXT] = display->black;
 	
-		/* Yellow */
-		textcols[BACK] = allocimagemix(display, DPaleyellow, DWhite);
+		/* Darkgreen */
+		textcols[BACK] = allocimagemix(display, DDarkgreen, DWhite);
 		textcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DDarkyellow);
 		textcols[BORD] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DYellowgreen);
 		textcols[TEXT] = display->black;
