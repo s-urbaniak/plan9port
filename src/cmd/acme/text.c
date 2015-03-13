@@ -754,8 +754,9 @@ texttype(Text *t, Rune r)
 		cut(t, t, nil, TRUE, FALSE, nil, 0);
 		return;
 	case Kcmd+'z':	/* %Z: undo */
-	 	typecommit(t);
-		undo(t, nil, nil, TRUE, 0, nil, 0);
+		typecommit(t);
+		if(t->what == Body)
+			undo(t, nil, nil, TRUE, 0, nil, 0);
 		return;
 
 	Tagdown:
@@ -800,6 +801,7 @@ texttype(Text *t, Rune r)
 		paste(t, t, nil, TRUE, FALSE, nil, 0);
 		textshow(t, t->q0, t->q1, 1);
 		t->iq1 = t->q1;
+		argtext = t;
 		return;
 	}
 	if(t->q1 > t->q0){

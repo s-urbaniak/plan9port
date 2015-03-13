@@ -124,6 +124,8 @@ struct
 	int		mbuttons;
 	NSPoint	mpos;
 	int		mscroll;
+	int		undoing;
+	int		touching;
 	int		willactivate;
 } in;
 
@@ -768,6 +770,7 @@ static void updatecursor(void);
 - (void)keyDown:(NSEvent*)e{ getkeyboard(e);}
 - (void)flagsChanged:(NSEvent*)e{ getkeyboard(e);}
 
+- (void)swipeWithEvent:(NSEvent*)e{ getgesture(e);}
 - (void)magnifyWithEvent:(NSEvent*)e{ getgesture(e);}
 
 - (void)touchesBeganWithEvent:(NSEvent*)e
@@ -1046,6 +1049,10 @@ getmouse(NSEvent *e)
 
 #define Minpinch	0.02
 
+static void sendclick(int);
+static void sendchord(int, int);
+static void sendcmd(int);
+
 static void
 getgesture(NSEvent *e)
 {
@@ -1054,10 +1061,22 @@ getgesture(NSEvent *e)
 		if(fabs([e magnification]) > Minpinch)
 			togglefs();
 		break;
+
+	case NSEventTypeSwipe:
+		if([e deltaX] == +1)
+			sendcmd('x');
+		else
+		if([e deltaX] == -1)
+			sendcmd('v');
+		else
+		if([e deltaY] == +1)
+			sendcmd('c');
+		else
+		if([e deltaY] == -1)
+			sendchord(2,1);
+		break;
 	}
 }
-
-static void sendclick(int);
 
 static uint
 msec(void)
@@ -1065,6 +1084,11 @@ msec(void)
 	return nsec()/1000000;
 }
 
+/*
+ * We receive swipe events from both Magic Mouse and
+ * trackpad, but we receive touch events only from
+ * trackpad.
+ */
 static void
 gettouch(NSEvent *e, int type)
 {
@@ -1075,6 +1099,7 @@ gettouch(NSEvent *e, int type)
 
 	switch(type){
 	case NSTouchPhaseBegan:
+		in.touching = 1;
 		p = NSTouchPhaseTouching;
 		set = [e touchesMatchingPhase:p inView:nil];
 		if(set.count == 3){
@@ -1096,6 +1121,8 @@ gettouch(NSEvent *e, int type)
 			if(tapping && msec()-taptime<400)
 				sendclick(2);
 			tapping = 0;
+			in.undoing = 0;
+			in.touching = 0;
 		}
 		break;
 
@@ -1108,9 +1135,31 @@ gettouch(NSEvent *e, int type)
 }
 
 static void
+sendcmd(int c)
+{
+	if(in.touching && (c=='x' || c=='v')){
+		if(in.undoing)
+			c = 'z';
+		in.undoing = ! in.undoing;
+	}
+	keystroke(Kcmd+c);
+}
+
+static void
 sendclick(int b)
 {
 	in.mbuttons = b;
+	sendmouse();
+	in.mbuttons = 0;
+	sendmouse();
+}
+
+static void
+sendchord(int b1, int b2)
+{
+	in.mbuttons = b1;
+	sendmouse();
+	in.mbuttons |= b2;
 	sendmouse();
 	in.mbuttons = 0;
 	sendmouse();
